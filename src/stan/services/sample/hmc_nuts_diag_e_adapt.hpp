@@ -56,6 +56,7 @@ namespace sample {
 template <class Model>
 int hmc_nuts_diag_e_adapt(
     Model& model, const stan::io::var_context& init,
+    const stan::io::var_context& clamped_params,
     const stan::io::var_context& init_inv_metric, unsigned int random_seed,
     unsigned int chain, double init_radius, int num_warmup, int num_samples,
     int num_thin, bool save_warmup, int refresh, double stepsize,
@@ -67,8 +68,7 @@ int hmc_nuts_diag_e_adapt(
   boost::ecuyer1988 rng = util::create_rng(random_seed, chain);
 
   std::vector<int> disc_vector;
-  std::vector<double> cont_vector = util::initialize(
-      model, init, rng, init_radius, true, logger, init_writer);
+  std::vector<double> cont_vector = util::initialize(model, init, clamped_params, rng, init_radius, true, logger, init_writer);
 
   Eigen::VectorXd inv_metric;
   try {
@@ -135,7 +135,10 @@ int hmc_nuts_diag_e_adapt(
  */
 template <class Model>
 int hmc_nuts_diag_e_adapt(
-    Model& model, const stan::io::var_context& init, unsigned int random_seed,
+    Model& model,
+    const stan::io::var_context& init,
+    const stan::io::var_context& clamped_params,
+    unsigned int random_seed,
     unsigned int chain, double init_radius, int num_warmup, int num_samples,
     int num_thin, bool save_warmup, int refresh, double stepsize,
     double stepsize_jitter, int max_depth, double delta, double gamma,
@@ -147,8 +150,8 @@ int hmc_nuts_diag_e_adapt(
       = util::create_unit_e_diag_inv_metric(model.num_params_r());
   stan::io::var_context& unit_e_metric = dmp;
 
-  return hmc_nuts_diag_e_adapt(
-      model, init, unit_e_metric, random_seed, chain, init_radius, num_warmup,
+  return hmc_nuts_diag_e_adapt(model, init, clamped_params, unit_e_metric,
+			       random_seed, chain, init_radius, num_warmup,
       num_samples, num_thin, save_warmup, refresh, stepsize, stepsize_jitter,
       max_depth, delta, gamma, kappa, t0, init_buffer, term_buffer, window,
       interrupt, logger, init_writer, sample_writer, diagnostic_writer);
