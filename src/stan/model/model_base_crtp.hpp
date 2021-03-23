@@ -206,6 +206,10 @@ class model_base_crtp : public stan::model::model_base {
     return static_cast<const M*>(this)->template transform_inits(
         context, params_r, msgs);
   }
+
+  inline std::string get_unconstrained_sizedtypes() const {
+    return static_cast<const M*>(this)->get_unconstrained_sizedtypes();
+  }
 };
 
 }  // namespace model

@@ -591,6 +591,11 @@ class model_base : public prob_grad {
                            std::vector<double>& params_r_constrained,
                            bool include_tparams = true, bool include_gqs = true,
                            std::ostream* msgs = 0) const = 0;
+
+  /**
+   * Return as json string the unconstrained size types
+   */
+  virtual std::string get_unconstrained_sizedtypes() const = 0;
 };
 
 }  // namespace model
