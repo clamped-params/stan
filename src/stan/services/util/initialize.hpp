@@ -4,6 +4,7 @@
 #include <stan/callbacks/logger.hpp>
 #include <stan/callbacks/writer.hpp>
 #include <stan/io/var_context.hpp>
+#include <stan/io/empty_var_context.hpp>
 #include <stan/io/random_var_context.hpp>
 #include <stan/io/chained_var_context.hpp>
 #include <stan/model/log_prob_grad.hpp>
@@ -21,7 +22,7 @@ namespace util {
  * Returns a valid initial value of the parameters of the model
  * on the unconstrained scale.
  *
- * For identical inputs (model, init, rng, init_radius), this
+ * For identical inputs (model, init, clamped_params, rng, init_radius), this
  * function will produce the same initialization.
  *
  * Initialization first tries to use the provided
@@ -39,6 +40,9 @@ namespace util {
  * parameters that are valid or it hits <code>MAX_INIT_TRIES =
  * 100</code> (hard-coded).
  *
+ * Random and specified initial conditions are both overridden by clamped
+ * parameter initial conditions
+ *
  * Valid initialization is defined as a finite, non-NaN value for the
  * evaluation of the log probability density function and all its
  * gradients.
@@ -50,6 +54,7 @@ namespace util {
  *
  * @param[in] model the model
  * @param[in] init a var_context with initial values
+ * @param[in] clamped_params a var_context with clamped parameters
  * @param[in,out] rng random number generator
  * @param[in] init_radius the radius for generating random values.
  *   A value of 0 indicates that the unconstrained parameters (not
@@ -67,6 +72,7 @@ namespace util {
  */
 template <bool Jacobian = true, class Model, class RNG>
 std::vector<double> initialize(Model& model, const stan::io::var_context& init,
+			       const stan::io::var_context& clamped_params,
                                RNG& rng, double init_radius, bool print_timing,
                                stan::callbacks::logger& logger,
                                stan::callbacks::writer& init_writer) {
@@ -78,8 +84,10 @@ std::vector<double> initialize(Model& model, const stan::io::var_context& init,
   std::vector<std::string> param_names;
   model.get_param_names(param_names);
   for (size_t n = 0; n < param_names.size(); n++) {
-    is_fully_initialized &= init.contains_r(param_names[n]);
+    is_fully_initialized &= (init.contains_r(param_names[n]) |
+			     clamped_params.contains_r(param_names[n]));
     any_initialized |= init.contains_r(param_names[n]);
+    any_initialized |= clamped_params.contains_r(param_names[n]);
   }
 
   bool is_initialized_with_zero = init_radius == 0.0;
@@ -96,7 +104,8 @@ std::vector<double> initialize(Model& model, const stan::io::var_context& init,
       if (!any_initialized) {
         unconstrained = random_context.get_unconstrained();
       } else {
-        stan::io::chained_var_context context(init, random_context);
+        stan::io::chained_var_context chained_init_context(init, random_context);
+        stan::io::chained_var_context context(clamped_params, chained_init_context);
 
         model.transform_inits(context, disc_vector, unconstrained, &msg);
       }
@@ -225,6 +234,19 @@ std::vector<double> initialize(Model& model, const stan::io::var_context& init,
         " or reparameterizing the model.");
   }
   throw std::domain_error("Initialization failed.");
+}
+
+/**
+ * Compatibility stub initialize function without clamped parameters argument. Will be
+ * replaced when everything supports clamped parameters
+ */
+template <bool Jacobian = true, class Model, class RNG>
+std::vector<double> initialize(Model& model, const stan::io::var_context& init,
+                               RNG& rng, double init_radius, bool print_timing,
+                               stan::callbacks::logger& logger,
+                               stan::callbacks::writer& init_writer) {
+  return initialize(model, init, stan::io::empty_var_context(), rng, init_radius,
+		    print_timing, logger, init_writer);
 }
 
 }  // namespace util
