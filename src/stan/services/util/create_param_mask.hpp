@@ -3,8 +3,6 @@
 
 #include <set>
 #include <rapidjson/document.h>
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
 #include <string>
 #include <vector>
 #include <stan/math.hpp>
@@ -29,7 +27,7 @@ void recurse_obj(std::vector<double>& v, const T& rtype_obj, bool clamped){
     v.insert(v.end(), rtype_obj["length"].GetInt(), clamped ? 1 : 0);
   }
   else{
-    v.push_back(clamped? 1 : 0);
+    v.push_back(clamped ? 1 : 0);
   }
 }
 
