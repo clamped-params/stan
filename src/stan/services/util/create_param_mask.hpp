@@ -1,7 +1,7 @@
 #ifndef STAN_SERVICES_UTIL_CREATE_PARAM_MASKS
 #define STAN_SERVICES_UTIL_CREATE_PARAM_MASKS
 
-#include <set>
+#include <stan/io/var_context.hpp>
 #include <rapidjson/document.h>
 #include <string>
 #include <vector>
@@ -31,18 +31,18 @@ void recurse_obj(std::vector<double>& v, const T& rtype_obj, bool clamped){
   }
 }
 
-Eigen::VectorXd create_param_mask(std::string& unconstrained_param_str, std::set<std::string>& clamped){
+Eigen::VectorXd create_param_mask(std::string& unconstrained_param_str, stan::io::var_context& clamped){
   rapidjson::Document d;
   d.Parse(unconstrained_param_str.c_str());
 
   std::vector<double> mask;
 
   for (auto const& p : d.GetArray()){
-    if(clamped.find(p.GetObject()["name"].GetString()) != clamped.end()){
-      recurse_obj(mask, p.GetObject()["type"].GetObject(), false);
+    if(clamped.contains_i(p.GetObject()["name"].GetString()) || clamped.contains_r(p.GetObject()["name"].GetString())){
+      recurse_obj(mask, p.GetObject()["type"].GetObject(), true);
     }
     else{
-      recurse_obj(mask, p.GetObject()["type"].GetObject(), true);
+      recurse_obj(mask, p.GetObject()["type"].GetObject(), false);
     }
   }
   return Eigen::Map<Eigen::VectorXd>(mask.data(), mask.size());
