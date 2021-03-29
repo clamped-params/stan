@@ -31,6 +31,14 @@ void recurse_obj(std::vector<double>& v, const T& rtype_obj, bool clamped){
   }
 }
 
+/**
+ * Create a parameter mask from json encoded dimension information and a var_context which contains the
+ * masked variables
+ *
+ * @param unconstrained_param_str json string
+ * @param clamped var_context with clamped parameters
+ * @return mask as Eigen::VectorXd with 1s for unclamped parameters and 0s for clamped parameters
+ */
 Eigen::VectorXd create_param_mask(std::string& unconstrained_param_str, stan::io::var_context& clamped){
   rapidjson::Document d;
   d.Parse(unconstrained_param_str.c_str());
@@ -39,10 +47,10 @@ Eigen::VectorXd create_param_mask(std::string& unconstrained_param_str, stan::io
 
   for (auto const& p : d.GetArray()){
     if(clamped.contains_i(p.GetObject()["name"].GetString()) || clamped.contains_r(p.GetObject()["name"].GetString())){
-      recurse_obj(mask, p.GetObject()["type"].GetObject(), true);
+      recurse_obj(mask, p.GetObject()["type"].GetObject(), false);
     }
     else{
-      recurse_obj(mask, p.GetObject()["type"].GetObject(), false);
+      recurse_obj(mask, p.GetObject()["type"].GetObject(), true);
     }
   }
   return Eigen::Map<Eigen::VectorXd>(mask.data(), mask.size());

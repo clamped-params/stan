@@ -1,3 +1,4 @@
+#include <test/unit/math/expect_near_rel.hpp>
 #include <stan/services/util/create_param_mask.hpp>
 #include <stan/io/var_context.hpp>
 #include <gtest/gtest.h>
@@ -86,6 +87,15 @@ TEST(rng, create_param_mask_works) {
     "]";
 
   TestVarContext test_var_context("arr5");
-  //clamped.insert("mat55");
-  std::cout << stan::services::util::create_param_mask(ss, test_var_context) << std::endl;
+  Eigen::VectorXd mask_ref_arr5(6);
+  mask_ref_arr5 << 1, 1, 0, 0, 1, 1;
+  auto mask = stan::services::util::create_param_mask(ss, test_var_context);
+  stan::test::expect_near_rel("clamp mask tests", mask, mask_ref_arr5);
+
+  TestVarContext test_var_context_mat55("mat55");
+  Eigen::VectorXd mask_ref_mat55(6);
+  mask_ref_mat55 << 0, 0, 1, 1, 1, 1;
+  auto mask2 = stan::services::util::create_param_mask(ss, test_var_context_mat55);
+  stan::test::expect_near_rel("clamp mask tests", mask2, mask_ref_mat55);
+  //std::cout << stan::services::util::create_param_mask(ss, test_var_context) << std::endl;
 }
