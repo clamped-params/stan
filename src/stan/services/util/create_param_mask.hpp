@@ -11,12 +11,19 @@ namespace stan{
 namespace services{
 namespace util{
 
+/**
+ * Add to the mask vector v mask variables for the type described in the json obj rtype_obj
+ *
+ * @param v mask vector
+ * @param rtype_obj json object describing variable
+ * @param clamped true if parameter is clamped
+ */
 template<typename T>
-void recurse_obj(std::vector<double>& v, const T& rtype_obj, bool clamped){
+void build_mask_recursive(std::vector<double>& v, const T& rtype_obj, bool clamped){
   std::string name = rtype_obj["name"].GetString();
   if (name == "array") {
     for(int i = 0; i < rtype_obj["length"].GetInt(); i++){
-      recurse_obj(v, rtype_obj["element_type"].GetObject(), clamped);
+      build_mask_recursive(v, rtype_obj["element_type"].GetObject(), clamped);
     }
   }
   else if(name == "matrix") {
@@ -47,10 +54,10 @@ Eigen::VectorXd create_param_mask(std::string& unconstrained_param_str, stan::io
 
   for (auto const& p : d.GetArray()){
     if(clamped.contains_i(p.GetObject()["name"].GetString()) || clamped.contains_r(p.GetObject()["name"].GetString())){
-      recurse_obj(mask, p.GetObject()["type"].GetObject(), false);
+      build_mask_recursive(mask, p.GetObject()["type"].GetObject(), false);
     }
     else{
-      recurse_obj(mask, p.GetObject()["type"].GetObject(), true);
+      build_mask_recursive(mask, p.GetObject()["type"].GetObject(), true);
     }
   }
   return Eigen::Map<Eigen::VectorXd>(mask.data(), mask.size());
