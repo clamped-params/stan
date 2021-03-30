@@ -17,8 +17,11 @@ TEST(McmcDiagEMetric, sample_p) {
   q(0) = 5;
   q(1) = 1;
 
+  Eigen::VectorXd mask(q.size());
+  mask << 1, 0;
+
   stan::mcmc::mock_model model(q.size());
-  stan::mcmc::diag_e_metric<stan::mcmc::mock_model, rng_t> metric(model);
+  stan::mcmc::diag_e_metric<stan::mcmc::mock_model, rng_t> metric(model, mask);
   stan::mcmc::diag_e_point z(q.size());
 
   int n_samples = 1000;
@@ -52,6 +55,9 @@ TEST(McmcDiagEMetric, gradients) {
   z.q = q;
   z.p.setOnes();
 
+  Eigen::VectorXd mask(q.size());
+  mask << 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0;
+
   std::fstream data_stream(std::string("").c_str(), std::fstream::in);
   stan::io::dump data_var_context(data_stream);
   data_stream.close();
@@ -64,7 +70,7 @@ TEST(McmcDiagEMetric, gradients) {
   stan::callbacks::stream_logger logger(debug, info, warn, error, fatal);
 
   stan::mcmc::diag_e_metric<funnel_model_namespace::funnel_model, rng_t> metric(
-      model);
+      model, mask);
 
   double epsilon = 1e-6;
 
@@ -147,10 +153,12 @@ TEST(McmcDiagEMetric, streams) {
 
   stan::mcmc::mock_model model(q.size());
 
+  Eigen::VectorXd mask(q.size());
+  mask << 1, 0;
   // typedef to use within Google Test macros
   typedef stan::mcmc::diag_e_metric<stan::mcmc::mock_model, rng_t> diag_e;
 
-  EXPECT_NO_THROW(diag_e metric(model));
+  EXPECT_NO_THROW(diag_e metric(model, mask));
 
   stan::test::reset_std_streams();
   EXPECT_EQ("", stan::test::cout_ss.str());
