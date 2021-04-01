@@ -80,6 +80,17 @@ TEST(McmcDiagEMetric, mask) {
 
   EXPECT_EQ(dphi_dq_no_mask(0), dphi_dq_mask(0));
   EXPECT_FLOAT_EQ(dphi_dq_mask(1), 0.0);
+
+  metric.sample_p(z_no_mask, base_rng);
+  metric.sample_p(z_mask, base_rng);
+  Eigen::VectorXd sample_p_no_mask = z_no_mask.p;
+  Eigen::VectorXd sample_p_mask = z_mask.p;
+
+  EXPECT_NE(sample_p_no_mask(0), 0.0);
+  EXPECT_NE(sample_p_no_mask(1), 0.0);
+
+  EXPECT_NE(sample_p_mask(0), 0.0);
+  EXPECT_FLOAT_EQ(sample_p_mask(1), 0.0);
 }
 
 TEST(McmcDiagEMetric, gradients) {
