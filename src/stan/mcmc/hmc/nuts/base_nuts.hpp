@@ -65,6 +65,10 @@ class base_nuts : public base_hmc<Model, Hamiltonian, Integrator, BaseRNG> {
     this->z_.set_metric(inv_e_metric);
   }
 
+  void set_mask(const Eigen::VectorXd& mask) {
+    this->z_.set_mask(mask);
+  }
+
   void set_max_depth(int d) {
     if (d > 0)
       max_depth_ = d;

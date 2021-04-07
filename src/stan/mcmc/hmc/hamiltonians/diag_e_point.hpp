@@ -16,6 +16,7 @@ class diag_e_point : public ps_point {
    * Vector of diagonal elements of inverse mass matrix.
    */
   Eigen::VectorXd inv_e_metric_;
+  Eigen::VectorXd mask_;
 
   /**
    * Construct a diag point in n-dimensional phase space
@@ -23,8 +24,9 @@ class diag_e_point : public ps_point {
    *
    * @param n number of dimensions
    */
-  explicit diag_e_point(int n) : ps_point(n), inv_e_metric_(n) {
+  explicit diag_e_point(int n) : ps_point(n), inv_e_metric_(n), mask_(n) {
     inv_e_metric_.setOnes();
+    mask_.setOnes();
   }
 
   /**
@@ -34,6 +36,15 @@ class diag_e_point : public ps_point {
    */
   void set_metric(const Eigen::VectorXd& inv_e_metric) {
     inv_e_metric_ = inv_e_metric;
+  }
+
+  /**
+   * Set the mask
+   * 
+   * @param mask the new mask
+   */
+  void set_mask(const Eigen::VectorXd& mask) {
+    mask_ = mask;
   }
 
   /**

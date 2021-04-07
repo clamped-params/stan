@@ -207,7 +207,7 @@ class model_base_crtp : public stan::model::model_base {
                                                         msgs);
   }
 
-  inline std::string get_unconstrained_sizedtypes() const {
+  inline std::string get_unconstrained_sizedtypes() const override {
     return static_cast<const M*>(this)->get_unconstrained_sizedtypes();
   }
 };

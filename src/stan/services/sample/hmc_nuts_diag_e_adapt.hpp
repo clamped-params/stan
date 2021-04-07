@@ -10,6 +10,7 @@
 #include <stan/services/error_codes.hpp>
 #include <stan/mcmc/hmc/nuts/adapt_diag_e_nuts.hpp>
 #include <stan/services/util/run_adaptive_sampler.hpp>
+#include <stan/services/util/create_param_mask.hpp>
 #include <stan/services/util/create_rng.hpp>
 #include <stan/services/util/initialize.hpp>
 #include <stan/services/util/inv_metric.hpp>
@@ -79,9 +80,12 @@ int hmc_nuts_diag_e_adapt(
     return error_codes::CONFIG;
   }
 
+  Eigen::VectorXd mask = util::create_param_mask(model.get_unconstrained_sizedtypes(), clamped_params);
+
   stan::mcmc::adapt_diag_e_nuts<Model, boost::ecuyer1988> sampler(model, rng);
 
   sampler.set_metric(inv_metric);
+  sampler.set_mask(mask);
   sampler.set_nominal_stepsize(stepsize);
   sampler.set_stepsize_jitter(stepsize_jitter);
   sampler.set_max_depth(max_depth);

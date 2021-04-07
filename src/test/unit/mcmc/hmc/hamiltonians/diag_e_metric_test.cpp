@@ -17,11 +17,8 @@ TEST(McmcDiagEMetric, sample_p) {
   q(0) = 5;
   q(1) = 1;
 
-  Eigen::VectorXd mask(q.size());
-  mask << 1, 0;
-
   stan::mcmc::mock_model model(q.size());
-  stan::mcmc::diag_e_metric<stan::mcmc::mock_model, rng_t> metric(model, mask);
+  stan::mcmc::diag_e_metric<stan::mcmc::mock_model, rng_t> metric(model);
   stan::mcmc::diag_e_point z(q.size());
 
   int n_samples = 1000;
@@ -46,6 +43,56 @@ TEST(McmcDiagEMetric, sample_p) {
   EXPECT_TRUE(std::fabs(var - 0.5 * q.size()) < 0.1 * q.size());
 }
 
+
+TEST(McmcDiagEMetric, mask) {
+  std::stringstream debug, info, warn, error, fatal;
+  stan::callbacks::stream_logger logger(debug, info, warn, error, fatal);
+  rng_t base_rng(0);
+
+  Eigen::VectorXd q(2);
+  q(0) = 5;
+  q(1) = 1;
+
+  Eigen::VectorXd mask(q.size());
+  mask << 1, 0;
+
+  stan::mcmc::mock_model model(q.size());
+  stan::mcmc::diag_e_metric<stan::mcmc::mock_model, rng_t> metric(model);
+  stan::mcmc::diag_e_point z_no_mask(q.size());
+
+  stan::mcmc::diag_e_point z_mask(q.size());
+  z_mask.set_mask(mask);
+
+  EXPECT_FLOAT_EQ(z_no_mask.mask_(0), 1.0);
+  EXPECT_FLOAT_EQ(z_no_mask.mask_(1), 1.0);
+
+  EXPECT_FLOAT_EQ(z_mask.mask_(0), 1.0);
+  EXPECT_FLOAT_EQ(z_mask.mask_(1), 0.0);
+
+  Eigen::VectorXd dtau_dp_no_mask = metric.dtau_dp(z_no_mask);
+  Eigen::VectorXd dtau_dp_mask = metric.dtau_dp(z_mask);
+
+  Eigen::VectorXd dphi_dq_no_mask = metric.dphi_dq(z_no_mask, logger);
+  Eigen::VectorXd dphi_dq_mask = metric.dphi_dq(z_mask, logger);
+
+  EXPECT_EQ(dtau_dp_no_mask(0), dtau_dp_mask(0));
+  EXPECT_FLOAT_EQ(dtau_dp_mask(1), 0.0);
+
+  EXPECT_EQ(dphi_dq_no_mask(0), dphi_dq_mask(0));
+  EXPECT_FLOAT_EQ(dphi_dq_mask(1), 0.0);
+
+  metric.sample_p(z_no_mask, base_rng);
+  metric.sample_p(z_mask, base_rng);
+  Eigen::VectorXd sample_p_no_mask = z_no_mask.p;
+  Eigen::VectorXd sample_p_mask = z_mask.p;
+
+  EXPECT_NE(sample_p_no_mask(0), 0.0);
+  EXPECT_NE(sample_p_no_mask(1), 0.0);
+
+  EXPECT_NE(sample_p_mask(0), 0.0);
+  EXPECT_FLOAT_EQ(sample_p_mask(1), 0.0);
+}
+
 TEST(McmcDiagEMetric, gradients) {
   rng_t base_rng(0);
 
@@ -54,9 +101,6 @@ TEST(McmcDiagEMetric, gradients) {
   stan::mcmc::diag_e_point z(q.size());
   z.q = q;
   z.p.setOnes();
-
-  Eigen::VectorXd mask(q.size());
-  mask << 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0;
 
   std::fstream data_stream(std::string("").c_str(), std::fstream::in);
   stan::io::dump data_var_context(data_stream);
@@ -69,8 +113,7 @@ TEST(McmcDiagEMetric, gradients) {
   std::stringstream debug, info, warn, error, fatal;
   stan::callbacks::stream_logger logger(debug, info, warn, error, fatal);
 
-  stan::mcmc::diag_e_metric<funnel_model_namespace::funnel_model, rng_t> metric(
-      model, mask);
+  stan::mcmc::diag_e_metric<funnel_model_namespace::funnel_model, rng_t> metric(model);
 
   double epsilon = 1e-6;
 
@@ -153,12 +196,10 @@ TEST(McmcDiagEMetric, streams) {
 
   stan::mcmc::mock_model model(q.size());
 
-  Eigen::VectorXd mask(q.size());
-  mask << 1, 0;
   // typedef to use within Google Test macros
   typedef stan::mcmc::diag_e_metric<stan::mcmc::mock_model, rng_t> diag_e;
 
-  EXPECT_NO_THROW(diag_e metric(model, mask));
+  EXPECT_NO_THROW(diag_e metric(model));
 
   stan::test::reset_std_streams();
   EXPECT_EQ("", stan::test::cout_ss.str());

@@ -46,7 +46,7 @@ void build_mask_recursive(std::vector<double>& v, const T& rtype_obj, bool clamp
  * @param clamped var_context with clamped parameters
  * @return mask as Eigen::VectorXd with 1s for unclamped parameters and 0s for clamped parameters
  */
-Eigen::VectorXd create_param_mask(std::string& unconstrained_param_str, stan::io::var_context& clamped){
+Eigen::VectorXd create_param_mask(const std::string& unconstrained_param_str, const stan::io::var_context& clamped){
   rapidjson::Document d;
   d.Parse(unconstrained_param_str.c_str());
 
